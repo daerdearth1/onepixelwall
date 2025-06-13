@@ -29,19 +29,30 @@ export default function OnePixelWall() {
   };
 
   return (
-    <div style={{ padding: '1rem', background: '#f3f1e7', fontFamily: 'monospace', textAlign: 'center' }}>
-      <h1 style={{ fontSize: '24px', color: '#2f4f90' }}>ONEPIXELWALL</h1>
-      <p>Leave your mark on the internet. $1 per pixel.</p>
+    <div style={{
+      padding: '1rem',
+      background: '#f0e8d9',
+      fontFamily: '"Press Start 2P", monospace',
+      color: '#333',
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
+      <h1 style={{ fontSize: '20px', color: '#0044cc', marginBottom: '0.5rem' }}>🎮 ONEPIXELWALL</h1>
+      <p style={{ marginBottom: '1rem' }}>Leave your mark on the internet. $1 per pixel.</p>
+
       <div style={{
-        display: 'inline-block',
-        transform: 'scale(0.65)',
-        transformOrigin: 'top center',
-        margin: '0 auto'
+        display: 'flex',
+        justifyContent: 'center',
+        width: '100%'
       }}>
         <div style={{
           position: 'relative',
           display: 'grid',
-          gridTemplateColumns: `repeat(${GRID_WIDTH}, ${BLOCK_SIZE}px)`
+          gridTemplateColumns: `repeat(${GRID_WIDTH}, ${BLOCK_SIZE}px)`,
+          backgroundColor: '#fffbe6',
+          boxShadow: '0 0 10px #aaa',
         }}>
           {Array(GRID_HEIGHT).fill(null).map((_, rowIndex) =>
             Array(GRID_WIDTH).fill(null).map((_, colIndex) => (
@@ -51,8 +62,9 @@ export default function OnePixelWall() {
                 style={{
                   width: BLOCK_SIZE,
                   height: BLOCK_SIZE,
-                  border: '1px solid #eee',
-                  background: '#fff',
+                  border: '1px solid #ddd',
+                  background: '#fafafa',
+                  cursor: 'pointer'
                 }}
               />
             ))
@@ -61,7 +73,7 @@ export default function OnePixelWall() {
           {blocks.map((block, i) => (
             <div
               key={i}
-              onClick={() => alert(block.type === 'texto' ? block.value : 'Imagen')}
+              title={block.value}
               style={{
                 position: 'absolute',
                 left: block.col * BLOCK_SIZE,
@@ -71,14 +83,17 @@ export default function OnePixelWall() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 10,
+                fontSize: 8,
                 overflow: 'hidden',
-                cursor: 'pointer'
+                background: block.type === 'texto' ? '#fdf3c7' : 'none',
+                border: block.type === 'texto' ? '1px solid #ccc' : 'none',
+                textAlign: 'center',
+                color: '#000',
+                padding: 2
               }}
-              title={block.value}
             >
               {block.type === 'texto' ? (
-                <span style={{ padding: 2, textAlign: 'center' }}>{block.value}</span>
+                <span>{block.value}</span>
               ) : (
                 <img
                   src={block.value}
@@ -101,9 +116,12 @@ export default function OnePixelWall() {
           background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 999
         }}>
-          <div style={{ background: '#fff', padding: 20, borderRadius: 8, width: 300 }}>
-            <h3>Agregar contenido</h3>
-            <label>Tamaño del bloque (ej: 10):</label>
+          <div style={{
+            background: '#fffbe6', padding: 20, borderRadius: 10, width: 300,
+            boxShadow: '0 0 10px #000', fontFamily: 'monospace'
+          }}>
+            <h3 style={{ marginBottom: 10 }}>Agregar contenido</h3>
+            <label>Tamaño del bloque:</label>
             <input type="number" value={modalData.size} min={1} max={50} onChange={e => setModalData({ ...modalData, size: parseInt(e.target.value) })} style={{ width: '100%', marginBottom: 10 }} />
             <label>Tipo:</label>
             <select value={modalData.type} onChange={e => setModalData({ ...modalData, type: e.target.value })} style={{ width: '100%', marginBottom: 10 }}>
