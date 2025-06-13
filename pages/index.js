@@ -4,8 +4,8 @@ const GRID_WIDTH = 250;
 const GRID_HEIGHT = 200;
 const BLOCK_SIZE = 10;
 
-const colors = ["#fef3bd", "#ffd6d6", "#d6f5d6", "#ade6ff", "#ffff95", "#fef0ff"];
-const fonts = ["monospace", "cursive", "serif", "Press Start 2P", "VT323", "Orbitron", "Pixelify Sans"];
+const colors = ["#ffb3c6", "#b3ffd9", "#ffffb3", "#b3d9ff", "#e0b3ff"];
+const fonts = ["monospace", "cursive", "serif", "Orbitron", "Pixelify Sans"];
 
 export default function OnePixelWall() {
   const [blocks, setBlocks] = useState([]);
@@ -22,16 +22,7 @@ export default function OnePixelWall() {
   });
 
   const openModal = (row, col) => {
-    setModalData({
-      row,
-      col,
-      size: 1,
-      type: "texto",
-      value: "",
-      styleMode: "aleatorio",
-      bgColor: "",
-      font: ""
-    });
+    setModalData({ row, col, size: 1, type: "texto", value: "", styleMode: "aleatorio", bgColor: "", font: "" });
     setShowModal(true);
   };
 
@@ -42,116 +33,104 @@ export default function OnePixelWall() {
       alert("Para subir una imagen necesitas mínimo 10x10 bloques");
       return;
     }
-
-    if (!value.trim()) {
+    if (!value) {
       alert("Contenido vacío.");
       return;
     }
 
-    // Check for collisions
-    const hasCollision = blocks.some(block => {
-      const x = block.col;
-      const y = block.row;
-      return (
-        x >= col &&
-        x < col + size &&
-        y >= row &&
-        y < row + size
-      );
-    });
-
-    if (hasCollision) {
-      alert("Los bloques seleccionados ya están ocupados.");
-      return;
-    }
-
-    let backgroundColor = bgColor;
-    let fontFamily = font;
-
-    if (type === "texto" && styleMode === "aleatorio") {
-      backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      fontFamily = fonts[Math.floor(Math.random() * fonts.length)];
-    }
-
     const newBlocks = [];
-
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        newBlocks.push({
-          row: row + y,
-          col: col + x,
-          type,
-          value,
-          bgColor: backgroundColor,
-          font: fontFamily,
-          isTopLeft: x === 0 && y === 0,
-          size
-        });
+    for (let r = row; r < row + size; r++) {
+      for (let c = col; c < col + size; c++) {
+        const occupied = blocks.some(b =>
+          r >= b.row && r < b.row + b.size && c >= b.col && c < b.col + b.size
+        );
+        if (occupied) {
+          alert("Ya hay contenido en la zona seleccionada.");
+          return;
+        }
+        newBlocks.push({ row: r, col: c, occupied: true });
       }
     }
 
-    setBlocks([...blocks, ...newBlocks]);
+    let style = {};
+    if (type === "texto") {
+      if (styleMode === "aleatorio") {
+        style = {
+          bgColor: colors[Math.floor(Math.random() * colors.length)],
+          font: fonts[Math.floor(Math.random() * fonts.length)],
+          color: "#000"
+        };
+      } else {
+        style = { bgColor, font, color: "#000" };
+      }
+    }
+
+    setBlocks([
+      ...blocks,
+      {
+        row,
+        col,
+        size,
+        type,
+        value,
+        ...style
+      }
+    ]);
     setShowModal(false);
   };
 
-  const grid = [];
-  for (let row = 0; row < GRID_HEIGHT; row++) {
-    for (let col = 0; col < GRID_WIDTH; col++) {
-      grid.push({ row, col });
-    }
-  }
-
   return (
-    <div style={{ background: "linear-gradient(to bottom, #002233, #330000)", minHeight: "100vh", padding: "20px" }}>
-      <div style={{ textAlign: "center", color: "white", marginBottom: "20px" }}>
-        <h1 style={{ fontFamily: "monospace" }}>🎮 ONEPIXELWALL</h1>
-        <p style={{ fontFamily: "monospace" }}>Leave your mark on the internet. $1 per pixel.</p>
-      </div>
-
+    <div style={{ background: "#061a2d", minHeight: "100vh", color: "white", fontFamily: "monospace", textAlign: "center" }}>
+      <h1 style={{ fontSize: "2em", padding: "1em" }}>🎮 ONEPIXELWALL</h1>
+      <p>Leave your mark on the internet. $1 per pixel.</p>
       <div style={{
         display: "grid",
         gridTemplateColumns: `repeat(${GRID_WIDTH}, ${BLOCK_SIZE}px)`,
         gridTemplateRows: `repeat(${GRID_HEIGHT}, ${BLOCK_SIZE}px)`,
         gap: "1px",
-        backgroundColor: "#333"
+        backgroundColor: "#111",
+        width: `${GRID_WIDTH * (BLOCK_SIZE + 1)}px`,
+        height: `${GRID_HEIGHT * (BLOCK_SIZE + 1)}px`,
+        margin: "2em auto",
+        overflow: "hidden",
+        border: "2px solid black",
+        position: "relative"
       }}>
-        {grid.map(({ row, col }) => {
-          const block = blocks.find(b => b.row === row && b.col === col);
-          if (block) {
-            if (!block.isTopLeft) return null;
-
-            const style = {
-              gridColumn: `span ${block.size}`,
-              gridRow: `span ${block.size}`,
-              backgroundColor: block.bgColor,
-              fontFamily: block.font,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "1px solid #111",
-              overflow: "hidden",
-              fontSize: `${Math.min(block.size * 4, 18)}px`,
-              textAlign: "center"
-            };
+        {Array.from({ length: GRID_HEIGHT }).map((_, row) =>
+          Array.from({ length: GRID_WIDTH }).map((_, col) => {
+            const block = blocks.find(b =>
+              row >= b.row &&
+              row < b.row + b.size &&
+              col >= b.col &&
+              col < b.col + b.size
+            );
 
             return (
-              <div key={`${block.row}-${block.col}`} style={style}>
-                {block.type === "texto" ? (
-                  <div style={{
-                    padding: "4px",
-                    wordWrap: "break-word",
-                    width: "100%",
-                    height: "100%",
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: `${Math.min(block.size * 4, 18)}px`,
-                    lineHeight: "1.2"
-                  }}>
-                    {block.value}
-                  </div>
-                ) : (
+              <div
+                key={`${row}-${col}`}
+                onClick={() => !block && openModal(row, col)}
+                style={{
+                  width: BLOCK_SIZE,
+                  height: BLOCK_SIZE,
+                  backgroundColor: block ? block.bgColor || "#000" : "#222",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: block ? `${block.size * 4}px` : "6px",
+                  fontFamily: block?.font || "monospace",
+                  color: block?.color || "#fff",
+                  overflow: "hidden",
+                  gridColumn: col + 1,
+                  gridRow: row + 1,
+                  position: block ? "absolute" : "relative",
+                  top: block ? block.row * (BLOCK_SIZE + 1) : undefined,
+                  left: block ? block.col * (BLOCK_SIZE + 1) : undefined,
+                  width: block ? block.size * (BLOCK_SIZE + 1) - 1 : BLOCK_SIZE,
+                  height: block ? block.size * (BLOCK_SIZE + 1) - 1 : BLOCK_SIZE
+                }}
+              >
+                {block?.type === "texto" && block.value}
+                {block?.type === "imagen" && (
                   <img
                     src={block.value}
                     alt=""
@@ -160,112 +139,69 @@ export default function OnePixelWall() {
                 )}
               </div>
             );
-          }
-
-          return (
-            <div
-              key={`${row}-${col}`}
-              onClick={() => openModal(row, col)}
-              style={{
-                width: BLOCK_SIZE,
-                height: BLOCK_SIZE,
-                backgroundColor: "#1a1a1a",
-                cursor: "pointer"
-              }}
-            />
-          );
-        })}
+          })
+        )}
       </div>
 
       {showModal && (
         <div style={{
           position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.7)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 999
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          backgroundColor: "#fff",
+          padding: "1em",
+          color: "#000",
+          borderRadius: "8px",
+          zIndex: 1000,
+          width: "300px"
         }}>
-          <div style={{
-            backgroundColor: "white",
-            padding: "20px",
-            borderRadius: "8px",
-            width: "300px"
-          }}>
-            <div style={{ marginBottom: "10px" }}>
-              <label>Cantidad de bloques:</label>
-              <input
-                type="number"
-                min="1"
-                max="50"
-                value={modalData.size}
-                onChange={e => setModalData({ ...modalData, size: parseInt(e.target.value) })}
-              />
-            </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label>Tipo:</label>
-              <select
-                value={modalData.type}
-                onChange={e => setModalData({ ...modalData, type: e.target.value })}
-              >
-                <option value="texto">Texto</option>
-                <option value="imagen">Imagen</option>
+          <p><strong>⚠️ Advertencia:</strong> El texto puede verse incompleto si el tamaño de bloques es muy pequeño. Usa al menos 2x2 para mensajes más largos.</p>
+          <label>
+            Cantidad de bloques:
+            <input type="number" min="1" max="10" value={modalData.size}
+              onChange={(e) => setModalData({ ...modalData, size: parseInt(e.target.value) })}
+            />
+          </label>
+          <br />
+          <label>
+            Tipo:
+            <select value={modalData.type} onChange={(e) => setModalData({ ...modalData, type: e.target.value })}>
+              <option value="texto">Texto</option>
+              <option value="imagen">Imagen</option>
+            </select>
+          </label>
+          <br />
+          <label>
+            {modalData.type === "imagen" ? "URL Imagen:" : "Mensaje:"}
+            <input type="text" value={modalData.value} onChange={(e) => setModalData({ ...modalData, value: e.target.value })} />
+          </label>
+          <br />
+          {modalData.type === "texto" && (
+            <>
+              <label>Estilo:</label>
+              <select value={modalData.styleMode} onChange={(e) => setModalData({ ...modalData, styleMode: e.target.value })}>
+                <option value="aleatorio">Aleatorio</option>
+                <option value="personalizado">Elegir estilo</option>
               </select>
-            </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label>{modalData.type === "imagen" ? "URL Imagen:" : "Mensaje:"}</label>
-              <input
-                type="text"
-                value={modalData.value}
-                onChange={e => setModalData({ ...modalData, value: e.target.value })}
-              />
-            </div>
-            {modalData.type === "texto" && (
-              <>
-                <div style={{ marginBottom: "10px" }}>
-                  <label>Estilo:</label>
-                  <select
-                    value={modalData.styleMode}
-                    onChange={e => setModalData({ ...modalData, styleMode: e.target.value })}
-                  >
-                    <option value="aleatorio">Aleatorio</option>
-                    <option value="personalizado">Elegir estilo</option>
+              {modalData.styleMode === "personalizado" && (
+                <>
+                  <br />
+                  <label>Color de fondo:</label>
+                  <input type="color" value={modalData.bgColor} onChange={(e) => setModalData({ ...modalData, bgColor: e.target.value })} />
+                  <br />
+                  <label>Fuente:</label>
+                  <select value={modalData.font} onChange={(e) => setModalData({ ...modalData, font: e.target.value })}>
+                    {fonts.map(f => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
                   </select>
-                </div>
-                {modalData.styleMode === "personalizado" && (
-                  <>
-                    <div style={{ marginBottom: "10px" }}>
-                      <label>Color de fondo:</label>
-                      <input
-                        type="color"
-                        value={modalData.bgColor}
-                        onChange={e => setModalData({ ...modalData, bgColor: e.target.value })}
-                      />
-                    </div>
-                    <div style={{ marginBottom: "10px" }}>
-                      <label>Fuente:</label>
-                      <select
-                        value={modalData.font}
-                        onChange={e => setModalData({ ...modalData, font: e.target.value })}
-                      >
-                        {fonts.map(f => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-            <p style={{ fontSize: "12px", color: "gray" }}>
-              ⚠️ Si usas pocos bloques, el texto puede cortarse. Usa un tamaño acorde al contenido.
-            </p>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button onClick={handleModalSubmit}>Agregar</button>
-              <button onClick={() => setShowModal(false)}>Cancelar</button>
-            </div>
-          </div>
+                </>
+              )}
+            </>
+          )}
+          <br />
+          <button onClick={handleModalSubmit}>Agregar</button>
+          <button onClick={() => setShowModal(false)} style={{ marginLeft: "1rem" }}>Cancelar</button>
         </div>
       )}
     </div>
