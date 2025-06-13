@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 
 const GRID_WIDTH = 250;
@@ -37,8 +36,7 @@ export default function OnePixelWall() {
         display: 'inline-block',
         transform: 'scale(0.65)',
         transformOrigin: 'top center',
-        margin: '0 auto',
-        border: '1px solid #ccc'
+        margin: '0 auto'
       }}>
         <div style={{
           position: 'relative',
@@ -53,7 +51,7 @@ export default function OnePixelWall() {
                 style={{
                   width: BLOCK_SIZE,
                   height: BLOCK_SIZE,
-                  border: '1px solid #ccc',
+                  border: '1px solid #eee',
                   background: '#fff',
                 }}
               />
@@ -70,8 +68,6 @@ export default function OnePixelWall() {
                 top: block.row * BLOCK_SIZE,
                 width: block.size * BLOCK_SIZE,
                 height: block.size * BLOCK_SIZE,
-                backgroundColor: '#ddd',
-                border: '2px solid #999',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -84,7 +80,15 @@ export default function OnePixelWall() {
               {block.type === 'texto' ? (
                 <span style={{ padding: 2, textAlign: 'center' }}>{block.value}</span>
               ) : (
-                <img src={block.value} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  src={block.value}
+                  alt="img"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/50x50?text=X";
+                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
               )}
             </div>
           ))}
