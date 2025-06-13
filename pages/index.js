@@ -1,21 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const GRID_WIDTH = 250;
 const GRID_HEIGHT = 200;
 const BLOCK_SIZE = 10;
 
-const colors = ["#ffeb3b", "#4caf50", "#2196f3", "#ff5722", "#e91e63", "#9c27b0"];
-const fonts = ["monospace", "cursive", "serif", "Press Start 2P", "VT323", "Orbitron", "Pixelify Sans"];
-
-function getContrastColor(bgColor) {
-  // Convert HEX to RGB
-  const r = parseInt(bgColor.substr(1, 2), 16);
-  const g = parseInt(bgColor.substr(3, 2), 16);
-  const b = parseInt(bgColor.substr(5, 2), 16);
-  // Calculate luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? "#000" : "#fff"; // black or white
-}
+const colors = ["#fef3bd", "#ff6d6d", "#d6f5d6", "#a6d6ff", "#ffff99", "#ff80b3"];
+const fonts = ["monospace", "cursive", "serif", "Press Start 2P", "VT323", "Orbitron"];
 
 export default function OnePixelWall() {
   const [blocks, setBlocks] = useState([]);
@@ -28,210 +18,187 @@ export default function OnePixelWall() {
     value: "",
     styleMode: "aleatorio",
     bgColor: "",
-    font: ""
+    font: "",
   });
 
+  const wallRef = useRef(null);
+
   const openModal = (row, col) => {
-    setModalData({
-      row,
-      col,
-      size: 1,
-      type: "texto",
-      value: "",
-      styleMode: "aleatorio",
-      bgColor: "",
-      font: ""
-    });
+    setModalData({ row, col, size: 1, type: "texto", value: "", styleMode: "aleatorio", bgColor: "", font: "" });
     setShowModal(true);
+  };
+
+  const isOccupied = (row, col, size) => {
+    return blocks.some((block) =>
+      row < block.row + block.size &&
+      row + size > block.row &&
+      col < block.col + block.size &&
+      col + size > block.col
+    );
   };
 
   const handleModalSubmit = () => {
     const { row, col, size, type, value, styleMode, bgColor, font } = modalData;
 
-    if (type === "imagen" && size < 10) {
-      alert("Para subir una imagen necesitas mínimo 10x10 bloques");
+    if (type === "imagen" && size < 2) {
+      alert("Para subir una imagen necesitas mínimo 2x2 bloques.");
       return;
     }
+
     if (!value) {
       alert("Contenido vacío.");
+      return;
+    }
+
+    if (isOccupied(row, col, size)) {
+      alert("Ya hay un bloque en esa posición.");
       return;
     }
 
     let style = {};
     if (type === "texto") {
       if (styleMode === "aleatorio") {
-        const bg = colors[Math.floor(Math.random() * colors.length)];
         style = {
-          backgroundColor: bg,
+          backgroundColor: colors[Math.floor(Math.random() * colors.length)],
           fontFamily: fonts[Math.floor(Math.random() * fonts.length)],
-          color: getContrastColor(bg)
         };
       } else {
-        style = {
-          backgroundColor: bgColor,
-          fontFamily: font,
-          color: getContrastColor(bgColor || "#ffffff")
-        };
+        style = { backgroundColor: bgColor || "#fff", fontFamily: font || "sans-serif" };
       }
     }
 
-    // Check for collision
-    const overlap = blocks.some(
-      (b) =>
-        row < b.row + b.size &&
-        row + size > b.row &&
-        col < b.col + b.size &&
-        col + size > b.col
-    );
-    if (overlap) {
-      alert("Ya hay contenido en esa área.");
-      return;
-    }
-
-    const newBlock = { row, col, size, type, value, style };
+    const newBlock = { ...modalData, style };
     setBlocks([...blocks, newBlock]);
     setShowModal(false);
   };
 
   return (
-    <div style={{ fontFamily: "monospace", background: "linear-gradient(#002f4b, #41295a)", minHeight: "100vh", paddingBottom: "50px" }}>
-      <h1 style={{ textAlign: "center", color: "#fff", padding: "1rem" }}>🎮 ONEPIXELWALL</h1>
-      <p style={{ textAlign: "center", color: "#ccc", marginTop: "-1rem" }}>
-        Leave your mark on the internet. $1 per pixel.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${GRID_WIDTH}, ${BLOCK_SIZE}px)`, width: GRID_WIDTH * BLOCK_SIZE, margin: "2rem auto", position: "relative" }}>
-        {Array.from({ length: GRID_HEIGHT }).map((_, row) =>
-          Array.from({ length: GRID_WIDTH }).map((_, col) => {
-            const block = blocks.find(
-              (b) =>
-                row >= b.row &&
-                row < b.row + b.size &&
-                col >= b.col &&
-                col < b.col + b.size
-            );
+    <div style={{ fontFamily: "monospace", background: "linear-gradient(#002233, #1a001a)", minHeight: "100vh", color: "#fff", overflow: "hidden" }}>
+      <div style={{ textAlign: "center", padding: "1rem" }}>
+        <h1 style={{ fontSize: "2rem" }}>🎮 ONEPIXELWALL</h1>
+        <p>Leave your mark on the internet. $1 per pixel.</p>
+      </div>
 
-            if (block && row === block.row && col === block.col) {
-              return (
-                <div
-                  key={`${row}-${col}`}
-                  style={{
-                    width: block.size * BLOCK_SIZE,
-                    height: block.size * BLOCK_SIZE,
-                    gridColumn: col + 1,
-                    gridRow: row + 1,
-                    backgroundColor: block.style?.backgroundColor || "transparent",
-                    color: block.style?.color || "#000",
-                    fontFamily: block.style?.fontFamily || "sans-serif",
-                    fontSize: "8px",
-                    textAlign: "center",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    overflow: "hidden",
-                    border: "1px solid #333"
-                  }}
-                >
-                  {block.type === "texto" ? (
-                    <div style={{ padding: 2, wordBreak: "break-word" }}>{block.value}</div>
-                  ) : (
-                    <img src={block.value} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  )}
-                </div>
-              );
-            }
-
-            if (!block) {
-              return (
-                <div
-                  key={`${row}-${col}`}
-                  onClick={() => openModal(row, col)}
-                  style={{
-                    width: BLOCK_SIZE,
-                    height: BLOCK_SIZE,
-                    gridColumn: col + 1,
-                    gridRow: row + 1,
-                    border: "1px solid #444",
-                    backgroundColor: "transparent"
-                  }}
-                />
-              );
-            }
-
-            return null;
-          })
-        )}
+      <div
+        ref={wallRef}
+        style={{
+          position: "relative",
+          width: GRID_WIDTH * BLOCK_SIZE,
+          height: GRID_HEIGHT * BLOCK_SIZE,
+          margin: "0 auto",
+          backgroundSize: `${BLOCK_SIZE}px ${BLOCK_SIZE}px`,
+          backgroundImage: "linear-gradient(to right, #333 1px, transparent 1px), linear-gradient(to bottom, #333 1px, transparent 1px)",
+        }}
+        onClick={(e) => {
+          const rect = wallRef.current.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const col = Math.floor(x / BLOCK_SIZE);
+          const row = Math.floor(y / BLOCK_SIZE);
+          openModal(row, col);
+        }}
+      >
+        {blocks.map((block, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              top: block.row * BLOCK_SIZE,
+              left: block.col * BLOCK_SIZE,
+              width: block.size * BLOCK_SIZE,
+              height: block.size * BLOCK_SIZE,
+              backgroundColor: block.type === "texto" ? block.style.backgroundColor : "transparent",
+              fontFamily: block.style.fontFamily,
+              fontSize: `${block.size * 4}px`,
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              textAlign: "center",
+              border: "1px solid #444",
+              padding: "2px",
+            }}
+          >
+            {block.type === "imagen" ? (
+              <img
+                src={block.value}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              block.value
+            )}
+          </div>
+        ))}
       </div>
 
       {showModal && (
-        <div style={{ position: "fixed", top: "20%", left: "50%", transform: "translateX(-50%)", background: "#fff", padding: "1rem", borderRadius: "5px", zIndex: 10 }}>
-          <label>
-            Cantidad de bloques:
-            <input
-              type="number"
-              min="1"
-              value={modalData.size}
-              onChange={(e) => setModalData({ ...modalData, size: parseInt(e.target.value) })}
-            />
-          </label>
-          <br />
-          <label>
-            Tipo:
-            <select
-              value={modalData.type}
-              onChange={(e) => setModalData({ ...modalData, type: e.target.value })}
-            >
-              <option value="texto">Texto</option>
-              <option value="imagen">Imagen</option>
-            </select>
-          </label>
-          <br />
-          <label>
-            {modalData.type === "imagen" ? "URL Imagen:" : "Mensaje:"}
-            <input
-              type="text"
-              value={modalData.value}
-              onChange={(e) => setModalData({ ...modalData, value: e.target.value })}
-            />
-          </label>
-          {modalData.type === "texto" && (
-            <>
-              <br />
-              <label>Estilo:</label>
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%",
+          height: "100%", backgroundColor: "rgba(0,0,0,0.7)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10
+        }}>
+          <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", color: "#000", minWidth: "300px" }}>
+            <div style={{ marginBottom: "0.5rem" }}>
+              <label>Cantidad de bloques: </label>
+              <input type="number" min={1} max={20} value={modalData.size}
+                onChange={(e) => setModalData({ ...modalData, size: parseInt(e.target.value) })} />
+            </div>
+            <div style={{ marginBottom: "0.5rem" }}>
+              <label>Tipo: </label>
               <select
-                value={modalData.styleMode}
-                onChange={(e) => setModalData({ ...modalData, styleMode: e.target.value })}
+                value={modalData.type}
+                onChange={(e) => setModalData({ ...modalData, type: e.target.value })}
               >
-                <option value="aleatorio">Aleatorio</option>
-                <option value="personalizado">Elegir estilo</option>
+                <option value="texto">Texto</option>
+                <option value="imagen">Imagen</option>
               </select>
-              {modalData.styleMode === "personalizado" && (
-                <>
-                  <br />
-                  <label>Color de fondo:</label>
-                  <input
-                    type="color"
-                    value={modalData.bgColor}
-                    onChange={(e) => setModalData({ ...modalData, bgColor: e.target.value })}
-                  />
-                  <br />
-                  <label>Fuente:</label>
+            </div>
+            <div style={{ marginBottom: "0.5rem" }}>
+              <label>{modalData.type === "imagen" ? "URL Imagen: " : "Mensaje: "}</label>
+              <input type="text" value={modalData.value}
+                onChange={(e) => setModalData({ ...modalData, value: e.target.value })} />
+            </div>
+            {modalData.type === "texto" && (
+              <>
+                <div style={{ marginBottom: "0.5rem" }}>
+                  <label>Estilo: </label>
                   <select
-                    value={modalData.font}
-                    onChange={(e) => setModalData({ ...modalData, font: e.target.value })}
+                    value={modalData.styleMode}
+                    onChange={(e) => setModalData({ ...modalData, styleMode: e.target.value })}
                   >
-                    {fonts.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
+                    <option value="aleatorio">Aleatorio</option>
+                    <option value="personalizado">Elegir estilo</option>
                   </select>
-                </>
-              )}
-            </>
-          )}
-          <br />
-          <button onClick={handleModalSubmit}>Agregar</button>
-          <button onClick={() => setShowModal(false)} style={{ marginLeft: "1rem" }}>
-            Cancelar
-          </button>
+                </div>
+                {modalData.styleMode === "personalizado" && (
+                  <>
+                    <div style={{ marginBottom: "0.5rem" }}>
+                      <label>Color de fondo: </label>
+                      <input type="color" value={modalData.bgColor}
+                        onChange={(e) => setModalData({ ...modalData, bgColor: e.target.value })} />
+                    </div>
+                    <div style={{ marginBottom: "0.5rem" }}>
+                      <label>Fuente: </label>
+                      <select value={modalData.font}
+                        onChange={(e) => setModalData({ ...modalData, font: e.target.value })}>
+                        {fonts.map((f) => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "space-between" }}>
+              <button onClick={handleModalSubmit}>Agregar</button>
+              <button onClick={() => setShowModal(false)}>Cancelar</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
