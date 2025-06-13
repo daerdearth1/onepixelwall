@@ -43,6 +43,7 @@ export default function OnePixelWall() {
           Array(GRID_WIDTH).fill(null).map((_, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
+              onClick={() => handleClick(rowIndex, colIndex)}
               style={{
                 width: BLOCK_SIZE,
                 height: BLOCK_SIZE,
